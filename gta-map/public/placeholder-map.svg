@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+  <defs>
+    <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+      <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#2c3442" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1000" height="1000" fill="#1b2230"/>
+  <rect width="1000" height="1000" fill="url(#grid)"/>
+  <path d="M 0 620 C 200 560, 300 700, 520 640 S 860 520, 1000 600 L 1000 1000 L 0 1000 Z" fill="#1f3a2e" opacity="0.8"/>
+  <path d="M 0 0 L 1000 0 L 1000 240 C 800 300, 600 200, 380 260 S 120 220, 0 280 Z" fill="#16314f" opacity="0.9"/>
+  <text x="500" y="500" text-anchor="middle" font-family="sans-serif" font-size="44" fill="#6b7a93">PLACEHOLDER MAP</text>
+  <text x="500" y="550" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#6b7a93">Asli map image yahan replace hogi</text>
+</svg>
