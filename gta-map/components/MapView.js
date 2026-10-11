@@ -1,94 +1,71 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { MAP_SIZE, categories, markers } from "../data/markers";
+import { useEffect, useState } from 'react';
+import { MapContainer, ImageOverlay, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import markersData from '../data/markers';
 
-const colorOf = (catId) =>
-  categories.find((c) => c.id === catId)?.color || "#ffffff";
+// Leaflet default icon setup
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
-function makeIcon(color, found) {
-  return L.divIcon({
-    className: "",
-    html: `<div class="marker-dot ${found ? "found" : ""}" style="background:${color}"></div>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
-    popupAnchor: [0, -10],
-  });
-}
+// Map bounds match for new HD map ratio
+const bounds = [[0, 0], [1000, 750]];
 
-export default function MapView({ visibleCategories, found, onToggleFound }) {
-  const containerRef = useRef(null);
-  const mapRef = useRef(null);
-  const layerRef = useRef(null);
-  const toggleRef = useRef(onToggleFound);
-  toggleRef.current = onToggleFound;
+export default function MapView({ selectedCategory, foundMarkers, toggleFound }) {
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Map sirf ek dafa banta hai
   useEffect(() => {
-    if (mapRef.current) return;
-
-    const bounds = [
-      [0, 0],
-      [MAP_SIZE, MAP_SIZE],
-    ];
-
-    const map = L.map(containerRef.current, {
-      crs: L.CRS.Simple,
-      minZoom: -2,
-      maxZoom: 2,
-      zoomSnap: 0.25,
-      maxBounds: [
-        [-200, -200],
-        [MAP_SIZE + 200, MAP_SIZE + 200],
-      ],
-      attributionControl: false,
-    });
-
-    L.imageOverlay("/placeholder-map.svg", bounds).addTo(map);
-    map.fitBounds(bounds);
-
-    layerRef.current = L.layerGroup().addTo(map);
-    mapRef.current = map;
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
+    setIsMounted(true);
   }, []);
 
-  // Jab filter ya "found" badle, markers dobara draw hote hain
-  useEffect(() => {
-    const layer = layerRef.current;
-    if (!layer) return;
-    layer.clearLayers();
+  if (!isMounted) return <div className="h-full w-full bg-slate-900 flex items-center justify-center text-white">Map loading...</div>;
 
-    markers
-      .filter((m) => visibleCategories.includes(m.category))
-      .forEach((m) => {
-        const isFound = !!found[m.id];
-        const marker = L.marker([m.y, m.x], {
-          icon: makeIcon(colorOf(m.category), isFound),
-        });
+  const filteredMarkers = selectedCategory === 'all' 
+    ? markersData 
+    : markersData.filter(m => m.category === selectedCategory);
 
-        const box = document.createElement("div");
-        box.innerHTML = `
-          <div class="popup-title"></div>
-          <p class="popup-desc"></p>
-          <label class="popup-check">
-            <input type="checkbox" /> Mil gaya (found)
-          </label>`;
-        box.querySelector(".popup-title").textContent = m.title;
-        box.querySelector(".popup-desc").textContent = m.description;
-        const checkbox = box.querySelector("input");
-        checkbox.checked = isFound;
-        checkbox.addEventListener("change", () => toggleRef.current(m.id));
-
-        marker.bindPopup(box);
-        marker.addTo(layer);
-      });
-  }, [visibleCategories, found]);
-
-  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+  return (
+    <MapContainer
+      center={[500, 375]}
+      zoom={0}
+      minZoom={-1}
+      maxZoom={3}
+      crs={L.CRS.Simple}
+      style={{ height: '100%', width: '100%', background: '#080d1a' }}
+      maxBounds={bounds}
+    >
+      <ImageOverlay
+        url="/map-bg.jpg"
+        bounds={bounds}
+      />
+      {filteredMarkers.map((marker) => (
+        <Marker 
+          key={marker.id} 
+          position={marker.coords}
+          opacity={foundMarkers.includes(marker.id) ? 0.4 : 1}
+        >
+          <Popup>
+            <div className="p-2 text-slate-900">
+              <h3 className="font-bold text-lg">{marker.title}</h3>
+              <p className="text-sm">{marker.description}</p>
+              <button
+                onClick={() => toggleFound(marker.id)}
+                className={`mt-2 px-3 py-1 rounded text-xs font-bold text-white ${
+                  foundMarkers.includes(marker.id) ? 'bg-green-600' : 'bg-blue-600'
+                }`}
+              >
+                {foundMarkers.includes(marker.id) ? 'Found ✓' : 'Mark as Found'}
+              </button>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
+  );
 }
